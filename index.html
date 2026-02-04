@@ -58,13 +58,11 @@
     }
 
     #no {
-      background-color: #e6e6e6;
-      position: fixed; /* aby utekalo po celej obrazovke */
-      left: 50%;
-      top: 60%;
-      transform: translate(-50%, -50%);
-      z-index: 3;
-    }
+  background-color: #e6e6e6;
+  position: relative; /* najprv je normálne vedľa ÁNO */
+  z-index: 3;
+}
+
 
     /* Success screen */
     #successScreen {
@@ -153,20 +151,24 @@
 
     // ====== NO button: run away ======
     function moveNoButton() {
-      const padding = 20;
-      const btnW = noBtn.offsetWidth || 120;
-      const btnH = noBtn.offsetHeight || 50;
+  // až keď uteká, prepne sa na fixed
+  noBtn.style.position = "fixed";
+  noBtn.style.transform = "none";
 
-      const maxX = window.innerWidth - btnW - padding;
-      const maxY = window.innerHeight - btnH - padding;
+  const padding = 20;
+  const btnW = noBtn.offsetWidth || 120;
+  const btnH = noBtn.offsetHeight || 50;
 
-      const x = Math.max(padding, Math.random() * maxX);
-      const y = Math.max(padding, Math.random() * maxY);
+  const maxX = window.innerWidth - btnW - padding;
+  const maxY = window.innerHeight - btnH - padding;
 
-      noBtn.style.left = x + "px";
-      noBtn.style.top = y + "px";
-      noBtn.style.transform = "none";
-    }
+  const x = Math.max(padding, Math.random() * maxX);
+  const y = Math.max(padding, Math.random() * maxY);
+
+  noBtn.style.left = x + "px";
+  noBtn.style.top = y + "px";
+}
+
 
     // Uteká na hover aj na click (mobil-friendly)
     noBtn.addEventListener("mouseover", moveNoButton);
@@ -250,3 +252,4 @@
 
 </body>
 </html>
+
