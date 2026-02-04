@@ -2,7 +2,9 @@
 <html lang="sk">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Valentínka 💖</title>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,68 +14,239 @@
       align-items: center;
       justify-content: center;
       margin: 0;
+      overflow: hidden;
     }
+
     .card {
       background: white;
       padding: 40px;
       border-radius: 20px;
       text-align: center;
       box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      max-width: 520px;
+      width: calc(100% - 40px);
+      position: relative;
+      z-index: 2;
     }
+
     h1 {
-      margin-bottom: 30px;
+      margin: 0 0 26px 0;
+      line-height: 1.2;
     }
+
+    .btnRow {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
     button {
       font-size: 18px;
-      padding: 12px 25px;
-      margin: 10px;
-      border-radius: 10px;
+      padding: 12px 22px;
+      border-radius: 12px;
       border: none;
       cursor: pointer;
+      user-select: none;
     }
+
     #yes {
       background-color: #ff4d6d;
       color: white;
     }
+
     #no {
-      background-color: #ddd;
-      position: absolute;
+      background-color: #e6e6e6;
+      position: fixed; /* aby utekalo po celej obrazovke */
+      left: 50%;
+      top: 60%;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+    }
+
+    /* Success screen */
+    #successScreen {
+      display: none;
+      text-align: center;
+      padding: 30px;
+    }
+
+    #successScreen h1 {
+      margin: 0 0 10px 0;
+    }
+
+    #successScreen p {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    /* Music button */
+    #musicBtn {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      background: #fff;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+      z-index: 9999;
+    }
+
+    /* Hint when autoplay is blocked */
+    #tapHint {
+      position: fixed;
+      left: 50%;
+      top: 18px;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.92);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+      z-index: 9999;
+      display: none;
     }
   </style>
 </head>
+
 <body>
 
-<div class="card">
-  <h1>Budeš moja Valentínka? 💕</h1>
-  <button id="yes">ÁNO 💖</button>
-  <button id="no">NIE 🙃</button>
-</div>
-
-<script>
-  const noBtn = document.getElementById("no");
-
-  noBtn.addEventListener("mouseover", () => {
-    const x = Math.random() * (window.innerWidth - 100);
-    const y = Math.random() * (window.innerHeight - 100);
-    noBtn.style.left = x + "px";
-    noBtn.style.top = y + "px";
-  });
-
-  document.getElementById("yes").addEventListener("click", () => {
-    document.body.innerHTML = `
-      <div style="
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        height:100vh;
-        font-family:Arial;
-        background:#ffccd5;
-        text-align:center;">
-        <h1>Jupííí 💖<br>Teším sa na naše valentínske rande 🥰</h1>
+  <div class="card" id="mainCard">
+    <div id="questionScreen">
+      <h1>Budeš moja Valentínka Malý Bosk? 💕</h1>
+      <div class="btnRow">
+        <button id="yes">ÁNO 💖</button>
+        <!-- NIE je mimo flow, lebo je position:fixed, ale necháme ho aj tu kvôli prístupnosti -->
+        <button id="no">NIE 🙃</button>
       </div>
-    `;
-  });
-</script>
+    </div>
+
+    <div id="successScreen">
+      <h1>Jupííí 💖</h1>
+      <p>Teším sa na naše valentínske randíčko! 🥰</p>
+    </div>
+  </div>
+
+  <!-- Confetti knižnica -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- MUSIC UI -->
+  <button id="musicBtn">🔇 Hudba</button>
+  <div id="tapHint">🔊 Klikni hocikde pre spustenie hudby</div>
+
+  <!-- Audio (MP3 je v root-e repa, takže cesta sedí) -->
+  <audio id="bgm" loop>
+    <source src="On Melancholy Hill.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    // Elements
+    const noBtn = document.getElementById("no");
+    const yesBtn = document.getElementById("yes");
+    const questionScreen = document.getElementById("questionScreen");
+    const successScreen = document.getElementById("successScreen");
+
+    // ====== NO button: run away ======
+    function moveNoButton() {
+      const padding = 20;
+      const btnW = noBtn.offsetWidth || 120;
+      const btnH = noBtn.offsetHeight || 50;
+
+      const maxX = window.innerWidth - btnW - padding;
+      const maxY = window.innerHeight - btnH - padding;
+
+      const x = Math.max(padding, Math.random() * maxX);
+      const y = Math.max(padding, Math.random() * maxY);
+
+      noBtn.style.left = x + "px";
+      noBtn.style.top = y + "px";
+      noBtn.style.transform = "none";
+    }
+
+    // Uteká na hover aj na click (mobil-friendly)
+    noBtn.addEventListener("mouseover", moveNoButton);
+    noBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      moveNoButton();
+    });
+
+    // ====== Confetti ======
+    function fireConfetti() {
+      if (typeof confetti !== "function") return;
+
+      confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+      setTimeout(() => confetti({ particleCount: 80, spread: 100, origin: { y: 0.7 } }), 250);
+      setTimeout(() => confetti({ particleCount: 60, spread: 120, origin: { y: 0.5 } }), 500);
+    }
+
+    // ====== YES click: show success without deleting the page ======
+    yesBtn.addEventListener("click", () => {
+      fireConfetti();
+      questionScreen.style.display = "none";
+      successScreen.style.display = "block";
+    });
+
+    // ====== Music logic ======
+    const bgm = document.getElementById("bgm");
+    const musicBtn = document.getElementById("musicBtn");
+    const tapHint = document.getElementById("tapHint");
+    let playing = false;
+
+    function updateMusicBtn() {
+      musicBtn.textContent = playing ? "🔊 Hudba" : "🔇 Hudba";
+    }
+
+    async function tryPlayMusic() {
+      try {
+        await bgm.play();
+        playing = true;
+        updateMusicBtn();
+        tapHint.style.display = "none";
+        return true;
+      } catch (e) {
+        // Autoplay blocked → show hint
+        tapHint.style.display = "block";
+        return false;
+      }
+    }
+
+    async function toggleMusic() {
+      try {
+        if (!playing) {
+          await bgm.play();
+          playing = true;
+          tapHint.style.display = "none";
+        } else {
+          bgm.pause();
+          playing = false;
+        }
+        updateMusicBtn();
+      } catch (e) {}
+    }
+
+    musicBtn.addEventListener("click", (e) => {
+      e.stopPropagation(); // nech to neráta ako "klik hocikde" (aj tak je to ok)
+      toggleMusic();
+    });
+
+    // Try autoplay on load
+    window.addEventListener("load", () => {
+      tryPlayMusic();
+    });
+
+    // If blocked, start after first click anywhere
+    document.addEventListener("click", () => {
+      if (!playing) tryPlayMusic();
+    }, { once: true });
+
+    // Initial state
+    updateMusicBtn();
+  </script>
 
 </body>
 </html>
